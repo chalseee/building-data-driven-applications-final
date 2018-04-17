@@ -1,0 +1,17 @@
+<h1>Home</h1>
+{% block nav %}
+    <a href="{{ url_for('index') }}">Home</a><br>
+    <a href="{{ url_for('all_lists') }}"></a><br>
+    <a href="{{ url_for('all_items') }}">All TODO items</a><br>
+{% endblock %}
+
+{% block content %}
+
+<form action="" method="POST">
+    {{ form.hidden_tag() }}
+    {{ form.name.label }} {{ form.name() }}<br>
+    {{ form.items.label }}{{ form.items() }}<br>
+    {{ form.submit() }}<br>
+</form>
+
+{% endblock %}
