@@ -1,4 +1,4 @@
-import os, json, datetime, requests
+import os, json, datetime, requests, api_info
 from flask import Flask, render_template, session, redirect, url_for, flash, request
 from flask_script import Manager, Shell
 from flask_wtf import FlaskForm
@@ -44,6 +44,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(255), unique=True, index=True)
     email = db.Column(db.String(64), unique=True, index=True)
     password_hash = db.Column(db.String(128))
+    # user_words = db.relationship('Word', backref="User")
 
     @property
     def password(self):
@@ -56,19 +57,26 @@ class User(UserMixin, db.Model):
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
 class Word(db.Model):
     __tablename__ = "words"
     id = db.Column(db.Integer, primary_key=True)
     language = db.Column(db.String(5))
     word = db.Column(db.String(32))
     phonetic_spelling = db.Column(db.String(32))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    pos = db.relationship('Word', secondary=pos_word, backref=db.backref('words', lazy='dynamic'), lazy='dynamic')
 
 class Definition(db.Model):
     __tablename__ = "definitions"
     id = db.Column(db.Integer, primary_key=True)
     definition = db.Column(db.String(264))
     example_sentence = db.Column(db.String(264))
-    word_id = db.relationship('Word', backref="Definition")
+    # word_id = db.relationship('Word', backref="Definition")
+    word_id = db.Column(db.Integer, db.ForeignKey('word.id'))
 
 class PartOfSpeech(db.Model):
     __tablename__ = "partofspeech"
@@ -97,6 +105,54 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password', validators=[Required()])
     remember_me = BooleanField('Keep me logged in')
     submit = SubmitField('Log In')
+
+class WordSearchForm(FlaskForm):
+    word = StringField('Word: ', validators=[Required(), Length(1,16)])
+    submit = SubmitField()
+
+    def validate_word(self, field):
+        if len(field.data.split(' ')) != 1:
+            raise ValidationError('Word must be one word!')
+
+class UpdateButtonForm(FlaskForm):
+    submit = SubmitField("Update")
+
+class UpdateWordForm(FlaskForm):
+    new_word = FloatField("What is the new word for this item? ", validators=[Required()])
+    submit = SubmitField("Update")
+
+class DeleteButtonForm(FlaskForm):
+    submit = SubmitField("Delete")
+
+#helper fxns
+def oxford_dict_request(app_id, app_key, base_url, word_id):
+    base_url = base_url + word_id.lower()
+    data = requests.get(base_url, headers={'app_id': app_id, 'app_key':app_key})
+    return data.json()['results'][0]
+
+def get_or_create_word(word):
+    w = Word.query.filter_by(word=word).first()
+    if not w:
+        d = oxford_dict_request(api_info.app_id, api_info.app_key, api_info.base_url, word)
+        w = Word(word=word, language=d["language"], user_id=current_user.id, phonetic_spelling=dprogramming_dict['lexicalEntries'][0]['pronunciations'][0]['phoneticSpelling'])
+        get_or_create_pos(w, d['lexicalEntries'][0]['entries']['lexicalCategory'])
+        get_or_create_definition(w, d['lexicalEntries'][0]['entries'][0]['senses'])
+        db.session.add(w)
+        db.session.commit()
+
+def get_or_create_definition(word_obj, definitions):
+    for d in definitions:
+        tmp = Definition(definition=d['definitions'], example_sentence=d['examples'][0], word_id = w.id)
+        db.session.add(tmp)
+    db.session.commit()
+
+def get_or_create_pos(word_obj, partofspeech):
+    pos = PartOfSpeech.query.filter_by(part_of_speech=partofspeech).first()
+    if not pos:
+        pos = PartOfSpeech(part_of_speech=partofspeech)
+        db.session.add(p)
+        db.session.commit()
+
 
 #View functions - all include the base navigation menu
 @app.errorhandler(404)
@@ -127,35 +183,49 @@ def logout():
 
 @app.route('/register',methods=["GET","POST"])
 def register():
-    pass #should render a page with a form allowing users to make an account
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(email=form.email.data,username=form.username.data,password=form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('You can now log in!')
+        return redirect(url_for('login'))
+    return render_template('register.html', form=form)
 
 @app.route('/secret')
-@login_required
 def secret():
-    pass #should render if a user goes on a page that they have to be logged in to use.
+    return "Only authenticated users can do this! Try to log in or contact the site admin."
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html')
+    form = LoginForm()
+    form2 = WordSearchForm()
+    if request.args:
+        word = request.args['word']
+        get_or_create_word(word)
+    return render_template('index.html', form2=form2, form=form)
 
-@app.route('/all_users_words')
+@app.route('/all_words')
 def all_words(): #should render a page that shows information about all words that have been added on this app. it will list all information in the words table.
-    pass #page doesn't require login.
+    words = Word.query.all()
+    return render_template('all_words.html', words=words)
 
-@login_required
 @app.route('/delete/<word_id>')
+@login_required
 def delete(): #should allow the user to delete a word from their list of words. this will remove the entry from the words table, but not it's associated definition(s). will submit/route to the your_words page.
     pass #page requires login
 
-@login_required
 @app.route('/update/<word_id>')
+@login_required
 def update(): #should allow the user to change a word from their list of words and then run a get_or_create fxn to update possible new parts of speech or definition(s). will submit/route to the your_words page.
     pass #page requires login
 
+@app.route('/your_words', methods=["GET", "POST"])
 @login_required
-@app.route('/your_words')
 def your_words(): #displays all words that the user has added to their collection. also displays a form to enter a word. page will update to show this word in addition to all past ones once the form is submitted correctly. otherwise, it will still redirect to this page, but flash an error message.
-    pass #page requires login
+
+
+    return render_template('your_words.html')
 
 
 if __name__ == "__main__":

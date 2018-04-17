@@ -1,0 +1,14 @@
+{% extends 'index.html' %}
+
+{% block main_content %}
+<h1>Your Words</h1>
+<ul>
+{% for w in words %}
+  {{ w }}
+{% endfor %}
+</ul>
+
+{% if not words %}
+There are no saved words to show.
+{% endif %}
+{% endblock %}
