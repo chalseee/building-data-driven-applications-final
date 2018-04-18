@@ -1,4 +1,4 @@
-import os, json, datetime, requests, api_info
+import os, json, datetime, api_info, requests
 from flask import Flask, render_template, session, redirect, url_for, flash, request
 from flask_script import Manager, Shell
 from flask_wtf import FlaskForm
@@ -19,7 +19,7 @@ app.use_reloader = True
 app.config['SECRET_KEY'] = 'secretstringhere'
 
 #postgresql://localhost/YOUR_DATABASE_NAME
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:icedout@localhost:5432/SI364projectplanCHALSEO"
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:icedout@localhost:5432/chalseodb"
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -67,16 +67,16 @@ class Word(db.Model):
     language = db.Column(db.String(5))
     word = db.Column(db.String(32))
     phonetic_spelling = db.Column(db.String(32))
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    pos = db.relationship('Word', secondary=pos_word, backref=db.backref('words', lazy='dynamic'), lazy='dynamic')
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    pos = db.relationship('PartOfSpeech', secondary=pos_word, backref=db.backref('words', lazy='dynamic'), lazy='dynamic')
 
 class Definition(db.Model):
     __tablename__ = "definitions"
     id = db.Column(db.Integer, primary_key=True)
     definition = db.Column(db.String(264))
-    example_sentence = db.Column(db.String(264))
+    domain = db.Column(db.String(16))
     # word_id = db.relationship('Word', backref="Definition")
-    word_id = db.Column(db.Integer, db.ForeignKey('word.id'))
+    word_id = db.Column(db.Integer, db.ForeignKey('words.id'))
 
 class PartOfSpeech(db.Model):
     __tablename__ = "partofspeech"
@@ -91,7 +91,6 @@ class RegistrationForm(FlaskForm):
     password2 = PasswordField("Confirm Password:",validators=[Required()])
     submit = SubmitField('Register User')
 
-    #Additional checking methods for the form
     def validate_email(self,field):
         if User.query.filter_by(email=field.data).first():
             raise ValidationError('Email already registered.')
@@ -111,7 +110,7 @@ class WordSearchForm(FlaskForm):
     submit = SubmitField()
 
     def validate_word(self, field):
-        if len(field.data.split(' ')) != 1:
+        if len(field.data.split(' ')) > 1:
             raise ValidationError('Word must be one word!')
 
 class UpdateButtonForm(FlaskForm):
@@ -121,6 +120,10 @@ class UpdateWordForm(FlaskForm):
     new_word = FloatField("What is the new word for this item? ", validators=[Required()])
     submit = SubmitField("Update")
 
+    def validate_new_word(self, field):
+        if len(field.data.split(' ')) > 1:
+            raise ValidationError('New word must be one word!')
+
 class DeleteButtonForm(FlaskForm):
     submit = SubmitField("Delete")
 
@@ -128,30 +131,52 @@ class DeleteButtonForm(FlaskForm):
 def oxford_dict_request(app_id, app_key, base_url, word_id):
     base_url = base_url + word_id.lower()
     data = requests.get(base_url, headers={'app_id': app_id, 'app_key':app_key})
-    return data.json()['results'][0]
+    if data:
+        return data.json()['results'][0]
+    return None
 
 def get_or_create_word(word):
     w = Word.query.filter_by(word=word).first()
     if not w:
         d = oxford_dict_request(api_info.app_id, api_info.app_key, api_info.base_url, word)
-        w = Word(word=word, language=d["language"], user_id=current_user.id, phonetic_spelling=dprogramming_dict['lexicalEntries'][0]['pronunciations'][0]['phoneticSpelling'])
-        get_or_create_pos(w, d['lexicalEntries'][0]['entries']['lexicalCategory'])
+        if d is None:
+            return None
+        w = Word(word=word, language=d['language'], user_id=current_user.id, phonetic_spelling=d['lexicalEntries'][0]['pronunciations'][0]['phoneticSpelling'], pos=[])
+        p = get_or_create_pos(w, d['lexicalEntries'][0]['lexicalCategory'])
         get_or_create_definition(w, d['lexicalEntries'][0]['entries'][0]['senses'])
+
         db.session.add(w)
         db.session.commit()
 
+        try:
+            w.pos.append(p.part_of_speech)
+        except:
+            print("threw error, idk why?")
+        db.session.commit()
+        return w
+    return w
+
+
 def get_or_create_definition(word_obj, definitions):
     for d in definitions:
-        tmp = Definition(definition=d['definitions'], example_sentence=d['examples'][0], word_id = w.id)
-        db.session.add(tmp)
-    db.session.commit()
+        tmp = Definition(definition="None", domain="None", word_id=word_obj.id)
+        if 'domains' in d.keys():
+            tmp.domain = d['domains'][0]
+        if 'definitions' in d.keys():
+            tmp.definition=d['definitions']
+        if tmp.definition is not "None":
+            db.session.add(tmp)
+            db.session.commit()
 
 def get_or_create_pos(word_obj, partofspeech):
     pos = PartOfSpeech.query.filter_by(part_of_speech=partofspeech).first()
-    if not pos:
+    if pos:
+        return pos
+    else:
         pos = PartOfSpeech(part_of_speech=partofspeech)
-        db.session.add(p)
+        db.session.add(pos)
         db.session.commit()
+        return pos
 
 
 #View functions - all include the base navigation menu
@@ -200,15 +225,25 @@ def secret():
 def index():
     form = LoginForm()
     form2 = WordSearchForm()
-    if request.args:
-        word = request.args['word']
-        get_or_create_word(word)
+
+    errors = [v for v in form.errors.values()]
+    if len(errors) > 0:
+        flash("!!!! ERRORS IN FORM SUBMISSION - " + str(errors))
+
     return render_template('index.html', form2=form2, form=form)
 
 @app.route('/all_words')
 def all_words(): #should render a page that shows information about all words that have been added on this app. it will list all information in the words table.
     words = Word.query.all()
-    return render_template('all_words.html', words=words)
+    defs = []
+    for w in words:
+        d = Definition.query.filter_by(word_id=w.id)
+        defs.append((w, d))
+    return render_template('all_words.html', words=defs)
+
+@app.route('/all_pos')
+def all_pos(): #should render a page that shows information about all words that have been added on this app. it will list all information in the words table.
+    return render_template('all_pos.html', pos=PartOfSpeech.query.all())
 
 @app.route('/delete/<word_id>')
 @login_required
@@ -223,9 +258,19 @@ def update(): #should allow the user to change a word from their list of words a
 @app.route('/your_words', methods=["GET", "POST"])
 @login_required
 def your_words(): #displays all words that the user has added to their collection. also displays a form to enter a word. page will update to show this word in addition to all past ones once the form is submitted correctly. otherwise, it will still redirect to this page, but flash an error message.
-
-
-    return render_template('your_words.html')
+    if request.args:
+        print('WORKING')
+        word = request.args['word']
+        result = get_or_create_word(word)
+        if result == None:
+            flash('Invalid query. Try again.')
+            return redirect(url_for('index'))
+    words = Word.query.filter_by(user_id=current_user.id)
+    defs = []
+    for w in words:
+        d = Definition.query.filter_by(word_id=w.id)
+        defs.append((w, d))
+    return render_template('your_words.html', words=defs)
 
 
 if __name__ == "__main__":

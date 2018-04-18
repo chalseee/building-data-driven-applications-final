@@ -1,10 +1,22 @@
 {% extends 'index.html' %}
 
 {% block main_content %}
-<h1>All Words</h1>
+<h1>all words.</h1>
 <ul>
 {% for w in words %}
-  {{ w }}
+  <u><b>{{ w[0].word }}</b></u><br />
+  <u>language:</u> {{ w[0].language }}<br />
+  <u>ipa representation:</u> {{ w[0].phonetic_spelling }}<br />
+  <u>part(s) of speech:</u> {{ w[0].pos }} <br />
+  <ol>
+    {% for tmp in w[1] %}
+    <li>
+      <u>domain of use:</u> {{ tmp.domain }} <br />
+      <u>definition:</u>  {{ tmp.definition }}
+    </li>
+    {% endfor %}
+  </ol>
+  <hr />
 {% endfor %}
 </ul>
 

@@ -1,7 +1,8 @@
 {% block nav %}
-    <a href="{{ url_for('index') }}">Homepage</a><br>
-    <a href="{{ url_for('your_words') }}">Your Words</a><br>
-    <a href="{{ url_for('all_words') }}">All Words</a><br>
+    <a href="{{ url_for('index') }}">home.</a><br>
+    <a href="{{ url_for('your_words') }}">your dictionary.</a><br>
+    <a href="{{ url_for('all_words') }}">complete dictionary.</a><br>
+    <a href="{{ url_for('all_pos') }}">parts of speech.</a>
 {% endblock %}
 
 {% block main_content %}
@@ -9,18 +10,26 @@
 
 {% if current_user.is_authenticated %}
     <p>
-      Enter your favorite word.
+      Enter your an <i>english</i> word.
     </p>
-    <form action="/your_words" method="GET">
+
+    <div>
+    {% for message in get_flashed_messages() %}
+    <strong>*** {{ message }} ***</strong>
+    {% endfor %}
+    </div>
+
+    <form action="{{ url_for('your_words') }}" method="GET">
       {{ form2.hidden_tag() }}
       {{ form2.word.label }} {{ form2.word() }}
       {{ form2.submit() }}
     </form>
 
-    <a href="{{ url_for('logout') }}">Sign Out {{current_user.username}}</a>
+    <a href="{{ url_for('logout') }}">Sign Out <i>{{current_user.username}}</i></a>
 {% else %}
     Been here before? <a href="{{ url_for('login') }}">Sign In</a>
 {% endif %}
+
 
 <p>New user?
 <a href="{{ url_for('register') }}">Click here to register</a> </p>

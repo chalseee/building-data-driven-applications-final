@@ -1,0 +1,16 @@
+{% extends 'index.html' %}
+
+{% block main_content %}
+<h1>all parts of speech.</h1>
+<ul>
+{% for p in pos %}
+  <li>
+    {{ p.part_of_speech }}
+  </li>
+{% endfor %}
+</ul>
+
+{% if not pos %}
+There are no saved words to show.
+{% endif %}
+{% endblock %}
