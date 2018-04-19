@@ -7,13 +7,23 @@
   There are no saved words to show.
 {% endif %}
 
+{% for message in get_flashed_messages() %}
+<strong>*** {{ message }} ***</strong>
+{% endfor %}
+
 <ul>
 {% for w in words %}
   <b>{{ w.word }}</b><br />
   <u>language:</u> {{ w.language }}<br />
   <u>ipa representation:</u> {{ w.phonetic_spelling }}<br />
   <u>part(s) of speech:</u> {{ w.pos }} <br />
-  {{ form2.submit() }}   {{ form.submit() }}
+  <form  style="display:inline;" method="POST" action="{{ url_for('update', word_id=w.id)}}">
+    {{ form2.submit() }}
+  </form>
+
+  <form style="display:inline;" method="POST" action="{{ url_for('delete', word_id=w.id)}}">
+    {{ form.submit() }}
+  </form>
   <hr />
 {% endfor %}
 </ul>

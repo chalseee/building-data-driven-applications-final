@@ -117,7 +117,8 @@ class UpdateButtonForm(FlaskForm):
     submit = SubmitField("Update")
 
 class UpdateWordForm(FlaskForm):
-    new_word = FloatField("What is the new word for this item? ", validators=[Required()])
+    new_language = StringField("What is the new language for this item?", validators=[Required(), Length(1,8)])
+    new_ipa = StringField("What is the new pronunciation for this word?", validators=[Required()])
     submit = SubmitField("Update")
 
     def validate_new_word(self, field):
@@ -245,15 +246,30 @@ def your_definitions(): #should render a page that shows information about all w
         defs.append((w, d))
     return render_template('your_definitions.html', words=defs)
 
-@app.route('/delete/<word_id>')
+@app.route('/delete/<word_id>', methods=["GET", "POST"])
 @login_required
-def delete(): #should allow the user to delete a word from their list of words. this will remove the entry from the words table, but not it's associated definition(s). will submit/route to the your_words page.
-    pass #page requires login
+def delete(word_id): #should allow the user to delete a word from their list of words. this will remove the entry from the words table, but not it's associated definition(s). will submit/route to the your_words page.
+    word = Word.query.filter_by(id=word_id).first()
+    definitions = Definition.query.filter_by(word_id=word_id)
+    for d in definitions:
+        db.session.delete(d)
+    db.session.delete(word)
+    db.session.commit()
+    flash('Successfully deleted word: ' + word.word)
+    return redirect(url_for('your_words'))
 
-@app.route('/update/<word_id>')
+@app.route('/update/<word_id>', methods=["GET", "POST"])
 @login_required
-def update(): #should allow the user to change a word from their list of words and then run a get_or_create fxn to update possible new parts of speech or definition(s). will submit/route to the your_words page.
-    pass #page requires login
+def update(word_id): #should allow the user to change a word from their list of words and then run a get_or_create fxn to update possible new parts of speech or definition(s). will submit/route to the your_words page.
+    word = Word.query.filter_by(id=word_id).first()
+    form = UpdateWordForm()
+    if form.validate_on_submit():
+        word.language = form.new_language.data
+        word.phonetic_spelling = form.new_ipa.data
+        db.session.commit()
+        flash("Updated priority of item: " + word.word + "!")
+        return redirect(url_for('your_words'))
+    return render_template('update.html', word=word, form=form) #page requires login
 
 @app.route('/your_words', methods=["GET", "POST"])
 @login_required
@@ -265,6 +281,7 @@ def your_words(): #displays all words that the user has added to their collectio
         if result == None:
             flash('Invalid query. Try again.')
             return redirect(url_for('index'))
+
     words = Word.query.filter_by(user_id=current_user.id)
     return render_template('your_words.html', words=words, form=DeleteButtonForm(), form2=UpdateButtonForm())
 

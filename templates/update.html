@@ -1,0 +1,23 @@
+{% extends 'index.html' %}
+
+{% block nav %}
+    {{ super() }}
+{% endblock %}
+
+{% block main_content %}
+
+<h1>update word: <i>{{word.word}}</i></h1>
+
+<form method="post" action="/update/{{word.id}}">
+  {{ form.new_language.label }} {{ form.new_language() }} <br />
+  {{ form.new_ipa.label }} {{ form.new_ipa() }}
+  {{ form.submit() }}
+</form>
+
+<div>
+{% for message in get_flashed_messages() %}
+<strong>*** {{ message }} ***</strong>
+{% endfor %}
+</div>
+
+{% endblock %}
