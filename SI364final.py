@@ -19,7 +19,8 @@ app.use_reloader = True
 app.config['SECRET_KEY'] = 'secretstringhere'
 
 #postgresql://localhost/YOUR_DATABASE_NAME
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:icedout@localhost:5432/chalseodb"
+#"postgresql://postgres:icedout@localhost:5432/chalseodb"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL') or "postgresql://localhost/chalseo"
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
