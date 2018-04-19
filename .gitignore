@@ -1,4 +1,4 @@
 api_info.py
 .DS_Store
 .DS_Store?
-*.pyc
+__pycache__

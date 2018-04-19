@@ -1,10 +1,10 @@
 {% extends 'index.html' %}
 
 {% block main_content %}
-<h1>all words.</h1>
+<h1>complete word dictionary.</h1>
 <ul>
 {% for w in words %}
-  <u><b>{{ w[0].word }}</b></u><br />
+  <i><b>{{ w[0].word }}</b></i><br />
   <u>language:</u> {{ w[0].language }}<br />
   <u>ipa representation:</u> {{ w[0].phonetic_spelling }}<br />
   <u>part(s) of speech:</u> {{ w[0].pos }} <br />

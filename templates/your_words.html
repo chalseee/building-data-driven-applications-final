@@ -1,26 +1,21 @@
 {% extends 'index.html' %}
 
 {% block main_content %}
-<h1>your words.</h1>
+<h1>your linguistic dictionary.</h1>
+
+{% if not words %}
+  There are no saved words to show.
+{% endif %}
+
 <ul>
 {% for w in words %}
-  <b>{{ w[0].word }}</b><br />
-  <u>language:</u> {{ w[0].language }}<br />
-  <u>ipa representation:</u> {{ w[0].phonetic_spelling }}<br />
-  <u>part(s) of speech:</u> {{ w[0].pos }} <br />
-  <ol>
-    {% for tmp in w[1] %}
-    <li>
-      <u>domain of use:</u> {{ tmp.domain }} <br />
-      <u>definition:</u>  {{ tmp.definition }}
-    </li>
-    {% endfor %}
-  </ol>
+  <b>{{ w.word }}</b><br />
+  <u>language:</u> {{ w.language }}<br />
+  <u>ipa representation:</u> {{ w.phonetic_spelling }}<br />
+  <u>part(s) of speech:</u> {{ w.pos }} <br />
+  {{ form2.submit() }}   {{ form.submit() }}
   <hr />
 {% endfor %}
 </ul>
 
-{% if not words %}
-There are no saved words to show.
-{% endif %}
 {% endblock %}

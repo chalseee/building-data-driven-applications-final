@@ -1,0 +1,23 @@
+{% extends 'index.html' %}
+
+{% block main_content %}
+<h1>your word dictionary.</h1>
+<ul>
+  {% for w in words %}
+    <i><b>{{ w[0].word }}</b></i><br />
+    <ol>
+      {% for tmp in w[1] %}
+      <li>
+        <u>domain of use:</u> {{ tmp.domain }} <br />
+        <u>definition:</u>  {{ tmp.definition }}
+      </li>
+      {% endfor %}
+    </ol>
+    <hr />
+  {% endfor %}
+</ul>
+
+{% if not words %}
+There are no saved words to show.
+{% endif %}
+{% endblock %}

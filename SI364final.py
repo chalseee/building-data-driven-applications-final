@@ -69,13 +69,13 @@ class Word(db.Model):
     phonetic_spelling = db.Column(db.String(32))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     pos = db.relationship('PartOfSpeech', secondary=pos_word, backref=db.backref('words', lazy='dynamic'), lazy='dynamic')
+    rel = db.relationship("Definition")
 
 class Definition(db.Model):
     __tablename__ = "definitions"
     id = db.Column(db.Integer, primary_key=True)
     definition = db.Column(db.String(264))
     domain = db.Column(db.String(16))
-    # word_id = db.relationship('Word', backref="Definition")
     word_id = db.Column(db.Integer, db.ForeignKey('words.id'))
 
 class PartOfSpeech(db.Model):
@@ -142,31 +142,25 @@ def get_or_create_word(word):
         if d is None:
             return None
         w = Word(word=word, language=d['language'], user_id=current_user.id, phonetic_spelling=d['lexicalEntries'][0]['pronunciations'][0]['phoneticSpelling'], pos=[])
-        p = get_or_create_pos(w, d['lexicalEntries'][0]['lexicalCategory'])
-        get_or_create_definition(w, d['lexicalEntries'][0]['entries'][0]['senses'])
-
         db.session.add(w)
         db.session.commit()
 
-        try:
-            w.pos.append(p.part_of_speech)
-        except:
-            print("threw error, idk why?")
-        db.session.commit()
+        p = get_or_create_pos(w, d['lexicalEntries'][0]['lexicalCategory'])
+        get_or_create_definition(w, d['lexicalEntries'][0]['entries'][0]['senses'])
+
         return w
     return w
 
 
 def get_or_create_definition(word_obj, definitions):
     for d in definitions:
-        tmp = Definition(definition="None", domain="None", word_id=word_obj.id)
+        tmp = Definition(definition="none available", domain="None", word_id=word_obj.id)
         if 'domains' in d.keys():
             tmp.domain = d['domains'][0]
         if 'definitions' in d.keys():
             tmp.definition=d['definitions']
-        if tmp.definition is not "None":
-            db.session.add(tmp)
-            db.session.commit()
+        db.session.add(tmp)
+        db.session.commit()
 
 def get_or_create_pos(word_obj, partofspeech):
     pos = PartOfSpeech.query.filter_by(part_of_speech=partofspeech).first()
@@ -241,9 +235,15 @@ def all_words(): #should render a page that shows information about all words th
         defs.append((w, d))
     return render_template('all_words.html', words=defs)
 
-@app.route('/all_pos')
-def all_pos(): #should render a page that shows information about all words that have been added on this app. it will list all information in the words table.
-    return render_template('all_pos.html', pos=PartOfSpeech.query.all())
+@app.route('/your_definitions')
+@login_required
+def your_definitions(): #should render a page that shows information about all words that have been added on this app. it will list all information in the words table.
+    words = Word.query.filter_by(user_id=current_user.id)
+    defs = []
+    for w in words:
+        d = Definition.query.filter_by(word_id=w.id)
+        defs.append((w, d))
+    return render_template('your_definitions.html', words=defs)
 
 @app.route('/delete/<word_id>')
 @login_required
@@ -257,7 +257,7 @@ def update(): #should allow the user to change a word from their list of words a
 
 @app.route('/your_words', methods=["GET", "POST"])
 @login_required
-def your_words(): #displays all words that the user has added to their collection. also displays a form to enter a word. page will update to show this word in addition to all past ones once the form is submitted correctly. otherwise, it will still redirect to this page, but flash an error message.
+def your_words(): #displays all words that the user has added to their collection. also displays a form to enter a word. page will update to show this word in addition to all past ones once the form is submitted correctly. otherwise, it will still redirect to this page, but flash an error message
     if request.args:
         print('WORKING')
         word = request.args['word']
@@ -266,11 +266,7 @@ def your_words(): #displays all words that the user has added to their collectio
             flash('Invalid query. Try again.')
             return redirect(url_for('index'))
     words = Word.query.filter_by(user_id=current_user.id)
-    defs = []
-    for w in words:
-        d = Definition.query.filter_by(word_id=w.id)
-        defs.append((w, d))
-    return render_template('your_words.html', words=defs)
+    return render_template('your_words.html', words=words, form=DeleteButtonForm(), form2=UpdateButtonForm())
 
 
 if __name__ == "__main__":
