@@ -6,11 +6,15 @@
 {% endblock %}
 
 {% block main_content %}
-<h1>Home</h1>
+<h1>homepage.</h1>
+
+<p>
+    Get Started!
+</p>
 
 {% if current_user.is_authenticated %}
     <p>
-      Enter your an <i>english</i> word.
+      This app allows you to create a small personal dictionary of your favorite words. Powered by the Oxford English dictionary, you can view grammatical/linguistic information about your words. To get started, please enter your an <i>english</i> word.
     </p>
 
     <div>

@@ -20,7 +20,7 @@ app.config['SECRET_KEY'] = 'secretstringhere'
 
 #postgresql://localhost/YOUR_DATABASE_NAME
 #"postgresql://postgres:icedout@localhost:5432/chalseodb"
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL') or "postgresql://localhost/chalseo"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL') or "postgresql://postgres:icedout@localhost:5432/chalseodb"
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -65,7 +65,7 @@ def load_user(user_id):
 class Word(db.Model):
     __tablename__ = "words"
     id = db.Column(db.Integer, primary_key=True)
-    language = db.Column(db.String(5))
+    language = db.Column(db.String(32))
     word = db.Column(db.String(32))
     phonetic_spelling = db.Column(db.String(32))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -118,13 +118,9 @@ class UpdateButtonForm(FlaskForm):
     submit = SubmitField("Update")
 
 class UpdateWordForm(FlaskForm):
-    new_language = StringField("What is the new language for this item?", validators=[Required(), Length(1,8)])
-    new_ipa = StringField("What is the new pronunciation for this word?", validators=[Required()])
+    new_language = StringField("What is the new language for this item?", validators=[Required()])
+    new_phonetic_spelling = StringField("What is the new phonetic spelling for this word?", validators=[Required()])
     submit = SubmitField("Update")
-
-    def validate_new_word(self, field):
-        if len(field.data.split(' ')) > 1:
-            raise ValidationError('New word must be one word!')
 
 class DeleteButtonForm(FlaskForm):
     submit = SubmitField("Delete")
@@ -143,13 +139,18 @@ def get_or_create_word(word):
         d = oxford_dict_request(api_info.app_id, api_info.app_key, api_info.base_url, word)
         if d is None:
             return None
-        w = Word(word=word, language=d['language'], user_id=current_user.id, phonetic_spelling=d['lexicalEntries'][0]['pronunciations'][0]['phoneticSpelling'], pos=[])
+        w = Word(word=word, language=d['language'], user_id=current_user.id, phonetic_spelling=d['lexicalEntries'][0]['pronunciations'][0]['phoneticSpelling'])
+        p = get_or_create_pos(w, d['lexicalEntries'][0]['lexicalCategory'])
+
+        print(w.word)
+        print(p.part_of_speech)
+
+        w.pos.append(p)
+
+        print(w.pos)
         db.session.add(w)
         db.session.commit()
-
-        p = get_or_create_pos(w, d['lexicalEntries'][0]['lexicalCategory'])
         get_or_create_definition(w, d['lexicalEntries'][0]['entries'][0]['senses'])
-
         return w
     return w
 
@@ -166,14 +167,11 @@ def get_or_create_definition(word_obj, definitions):
 
 def get_or_create_pos(word_obj, partofspeech):
     pos = PartOfSpeech.query.filter_by(part_of_speech=partofspeech).first()
-    if pos:
-        return pos
-    else:
+    if not pos:
         pos = PartOfSpeech(part_of_speech=partofspeech)
         db.session.add(pos)
         db.session.commit()
-        return pos
-
+    return pos
 
 #View functions - all include the base navigation menu
 @app.errorhandler(404)
@@ -262,15 +260,15 @@ def delete(word_id): #should allow the user to delete a word from their list of 
 @app.route('/update/<word_id>', methods=["GET", "POST"])
 @login_required
 def update(word_id): #should allow the user to change a word from their list of words and then run a get_or_create fxn to update possible new parts of speech or definition(s). will submit/route to the your_words page.
-    word = Word.query.filter_by(id=word_id).first()
     form = UpdateWordForm()
     if form.validate_on_submit():
+        word = Word.query.filter_by(id=word_id).first()
         word.language = form.new_language.data
-        word.phonetic_spelling = form.new_ipa.data
+        word.phonetic_spelling = form.new_phonetic_spelling.data
         db.session.commit()
-        flash("Updated priority of item: " + word.word + "!")
+        flash("Updated values of word: " + word.word + "!")
         return redirect(url_for('your_words'))
-    return render_template('update.html', word=word, form=form) #page requires login
+    return render_template('update.html', word=Word.query.filter_by(id=word_id).first(), form=form) #page requires login
 
 @app.route('/your_words', methods=["GET", "POST"])
 @login_required
