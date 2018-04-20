@@ -19,8 +19,7 @@ app.use_reloader = True
 app.config['SECRET_KEY'] = 'secretstringhere'
 
 #postgresql://localhost/chalseodb
-#"postgresql://postgres:icedout@localhost:5432/chalseodb"
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL') or "postgresql://postgres:icedout@localhost:5432/chalseodb"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL') or "postgresql://localhost/chalseodb"
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['HEROKU_ON'] = os.environ.get('HEROKU')
@@ -124,8 +123,8 @@ class UpdateWordForm(FlaskForm):
         if len(field.data.split(' ')) > 1:
             raise ValidationError('Language must be one word!')
 
-    def validate_phonetic_spelling(self, field):
-        for f in field:
+    def validate_new_phonetic_spelling(self, field):
+        for f in str(field):
             if f.isdigit():
                 raise ValidationError('No numbers can be in the phonetic spelling!')
 
