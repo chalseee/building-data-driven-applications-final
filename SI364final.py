@@ -283,7 +283,6 @@ def update(word_id): #should allow the user to change a word from their list of 
 @login_required
 def your_words(): #displays all words that the user has added to their collection. also displays a form to enter a word. page will update to show this word in addition to all past ones once the form is submitted correctly. otherwise, it will still redirect to this page, but flash an error message
     if request.args:
-        print('WORKING')
         word = request.args['word']
         result = get_or_create_word(word)
         if result == None:

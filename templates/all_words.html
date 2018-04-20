@@ -7,7 +7,10 @@
   <i><b>{{ w[0].word }}</b></i><br />
   <u>language:</u> {{ w[0].language }}<br />
   <u>ipa representation:</u> {{ w[0].phonetic_spelling }}<br />
-  <u>part(s) of speech:</u> {{ w[0].pos }} <br />
+  <u>part(s) of speech:</u>
+  {% for p in w[0].pos %}
+   {{ p.part_of_speech }} &nbsp;
+  {% endfor %} <br />
   <ol>
     {% for tmp in w[1] %}
     <li>

@@ -32,10 +32,11 @@
     <a href="{{ url_for('logout') }}">Sign Out <i>{{current_user.username}}</i></a>
 {% else %}
     Been here before? <a href="{{ url_for('login') }}">Sign In</a>
+    <p>New user?
+    <a href="{{ url_for('register') }}">Click here to register</a> </p>
 {% endif %}
 
 
-<p>New user?
-<a href="{{ url_for('register') }}">Click here to register</a> </p>
+
 
 {% endblock %}
