@@ -5,6 +5,18 @@ name = "pypi"
 
 [packages]
 gunicorn = "*"
+flask = "*"
+requests = "*"
+flask-script = "*"
+flask-wtf = "*"
+wtforms = "*"
+flask-sqlalchemy = "*"
+flask-migrate = "*"
+flask-login = "*"
+werkzeug = "*"
+"psycopg2" = "*"
+"psycopg2-binary" = "*"
+gunicorn = "*"
 
 [dev-packages]
 

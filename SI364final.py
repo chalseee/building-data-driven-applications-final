@@ -226,7 +226,7 @@ def secret():
 def index():
     form = LoginForm()
     form2 = WordSearchForm()
-    return render_template('index.html', form2=form2, form=form)
+    return render_template('base.html', form2=form2, form=form)
 
 @app.route('/all_words')
 def all_words(): #should render a page that shows information about all words that have been added on this app. it will list all information in the words table.
