@@ -13,29 +13,29 @@ This application will allow users to register and login, save their favorite wor
 - api_info (a separate python file with API keys, urls, etc.)
 
 ### **Included Routes** ###
-/index -> base.html
-/all_words -> all_words.html
-/form -> form.html
-/your_definitions -> your_definitions.html
-/delete/<word_id> -> deletes a word and redirects to the your_words page
-/update/<word_id> -> update.html (if the form submits correctly, this redirects to the your_words page)
-/your_words -> your_words.html
-/login -> login.html
-/register -> register.html
+- /index -> base.html
+- /all_words -> all_words.html
+- /form -> form.html
+- /your_definitions -> your_definitions.html
+- /delete/<word_id> -> deletes a word and redirects to the your_words page
+- /update/<word_id> -> update.html (if the form submits correctly, this - redirects to the your_words page)
+- /your_words -> your_words.html
+- /login -> login.html
+- /register -> register.html
 
 ### **Documentation README Requirements**
 
-- [ ] Create a `README.md` file for your app that includes the full list of requirements from this page. The ones you have completed should be bolded or checked off. (You bold things in Markdown by using two asterisks, like this: `**This text would be bold** and this text would not be`)
+- [X] Create a `README.md` file for your app that includes the full list of requirements from this page. The ones you have completed should be bolded or checked off. (You bold things in Markdown by using two asterisks, like this: `**This text would be bold** and this text would not be`)
 
-- [ ] The `README.md` file should use markdown formatting and be clear / easy to read.
+- [X] The `README.md` file should use markdown formatting and be clear / easy to read.
 
-- [ ] The `README.md` file should include a 1-paragraph (brief OK) description of what your application does
+- [X] The `README.md` file should include a 1-paragraph (brief OK) description of what your application does
 
-- [ ] The `README.md` file should include a detailed explanation of how a user can user the running application (e.g. log in and see what, be able to save what, enter what, search for what... Give us examples of data to enter if it's not obviously stated in the app UI!)
+- [X] The `README.md` file should include a detailed explanation of how a user can user the running application (e.g. log in and see what, be able to save what, enter what, search for what... Give us examples of data to enter if it's not obviously stated in the app UI!)
 
-- [ ] The `README.md` file should include a list of every module that must be installed with `pip` if it's something you installed that we didn't use in a class session. If there are none, you should note that there are no additional modules to install.
+- [X] The `README.md` file should include a list of every module that must be installed with `pip` if it's something you installed that we didn't use in a class session. If there are none, you should note that there are no additional modules to install.
 
-- [ ] The `README.md` file should include a list of all of the routes that exist in the app and the names of the templates each one should render OR, if a route does not render a template, what it returns (e.g. `/form` -> `form.html`, like [the list we provided in the instructions for HW2](https://www.dropbox.com/s/3a83ykoz79tqn8r/Screenshot%202018-02-15%2013.27.52.png?dl=0) and like you had to on the midterm, or `/delete -> deletes a song and redirects to index page`, etc).
+- [X] The `README.md` file should include a list of all of the routes that exist in the app and the names of the templates each one should render OR, if a route does not render a template, what it returns (e.g. `/form` -> `form.html`, like [the list we provided in the instructions for HW2](https://www.dropbox.com/s/3a83ykoz79tqn8r/Screenshot%202018-02-15%2013.27.52.png?dl=0) and like you had to on the midterm, or `/delete -> deletes a song and redirects to index page`, etc).
 
 ### **Code Requirements** ###
 - [X] Ensure that your `SI364final.py` file has all the setup (`app.config` values, import statements, code to run the app if that file is run, etc) necessary to run the Flask application, and the application runs correctly on `http://localhost:5000` (and the other routes you set up). **Your main file must be called** `SI364final.py`**, but of course you may include other files if you need.**
