@@ -9,9 +9,10 @@
 <h1>update word: <i>{{word.word}}</i></h1>
 
 <form method="post" action="/update/{{word.id}}">
-  {{ form.csrf_token }}
+  {{ form.hidden_tag() }}
   {{ form.new_language.label }} {{ form.new_language() }} <br />
-  {{ form.new_phonetic_spelling.label }} {{ form.new_phonetic_spelling() }}
+  {{ form.new_phonetic_spelling.label }} {{ form.new_phonetic_spelling() }} <br />
+  {{ form.new_pos.label }} {{ form.new_pos() }}
   {{ form.submit() }}
 </form>
 

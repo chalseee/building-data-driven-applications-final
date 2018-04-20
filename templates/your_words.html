@@ -16,9 +16,10 @@
   <b>{{ w.word }}</b><br />
   <u>language:</u> {{ w.language }}<br />
   <u>ipa representation:</u> {{ w.phonetic_spelling }}<br />
+  <u>part(s) of speech:</u>
   {% for p in w.pos %}
-  <u>part(s) of speech:</u> {{ p.part_of_speech }} <br />
-  {% endfor %}
+   {{ p.part_of_speech }} &nbsp;
+  {% endfor %} <br />
   <form  style="display:inline;" method="POST" action="{{ url_for('update', word_id=w.id)}}">
     {{ form2.submit() }}
   </form>

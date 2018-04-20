@@ -18,11 +18,12 @@ app.debug = True
 app.use_reloader = True
 app.config['SECRET_KEY'] = 'secretstringhere'
 
-#postgresql://localhost/YOUR_DATABASE_NAME
+#postgresql://localhost/chalseodb
 #"postgresql://postgres:icedout@localhost:5432/chalseodb"
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URL') or "postgresql://postgres:icedout@localhost:5432/chalseodb"
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['HEROKU_ON'] = os.environ.get('HEROKU')
 
 manager=Manager(app)
 db=SQLAlchemy(app)
@@ -110,17 +111,23 @@ class WordSearchForm(FlaskForm):
     word = StringField('Word: ', validators=[Required(), Length(1,16)])
     submit = SubmitField()
 
-    def validate_word(self, field):
-        if len(field.data.split(' ')) > 1:
-            raise ValidationError('Word must be one word!')
-
 class UpdateButtonForm(FlaskForm):
     submit = SubmitField("Update")
 
 class UpdateWordForm(FlaskForm):
     new_language = StringField("What is the new language for this item?", validators=[Required()])
     new_phonetic_spelling = StringField("What is the new phonetic spelling for this word?", validators=[Required()])
+    new_pos = StringField = StringField("Optional: add another part of speech to this word?")
     submit = SubmitField("Update")
+
+    def validate_new_language(self, field):
+        if len(field.data.split(' ')) > 1:
+            raise ValidationError('Language must be one word!')
+
+    def validate_phonetic_spelling(self, field):
+        for f in field:
+            if f.isdigit():
+                raise ValidationError('No numbers can be in the phonetic spelling!')
 
 class DeleteButtonForm(FlaskForm):
     submit = SubmitField("Delete")
@@ -219,11 +226,6 @@ def secret():
 def index():
     form = LoginForm()
     form2 = WordSearchForm()
-
-    errors = [v for v in form.errors.values()]
-    if len(errors) > 0:
-        flash("!!!! ERRORS IN FORM SUBMISSION - " + str(errors))
-
     return render_template('index.html', form2=form2, form=form)
 
 @app.route('/all_words')
@@ -261,14 +263,21 @@ def delete(word_id): #should allow the user to delete a word from their list of 
 @login_required
 def update(word_id): #should allow the user to change a word from their list of words and then run a get_or_create fxn to update possible new parts of speech or definition(s). will submit/route to the your_words page.
     form = UpdateWordForm()
+    word = Word.query.filter_by(id=word_id).first()
     if form.validate_on_submit():
-        word = Word.query.filter_by(id=word_id).first()
         word.language = form.new_language.data
         word.phonetic_spelling = form.new_phonetic_spelling.data
+        if form.new_pos.data:
+            p = get_or_create_pos(word, form.new_pos.data)
+            word.pos.append(p)
         db.session.commit()
         flash("Updated values of word: " + word.word + "!")
         return redirect(url_for('your_words'))
-    return render_template('update.html', word=Word.query.filter_by(id=word_id).first(), form=form) #page requires login
+
+    errors = [v for v in form.errors.values()]
+    if len(errors) > 0:
+        flash("!!!! ERRORS IN FORM SUBMISSION - " + str(errors))
+    return render_template('update.html', word=word, form=form) #page requires login
 
 @app.route('/your_words', methods=["GET", "POST"])
 @login_required
