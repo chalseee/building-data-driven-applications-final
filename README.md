@@ -1,4 +1,4 @@
-# 364final
+# 364 - Building Data Driven Applications - Final project
 
 ### **Description of App** ###
 This application will allow users to register and login, save their favorite words through a word entry. This word information will be given to the Oxford Dictionary API and create different pages with words, definitions, and other word related information. Users can see their own words and definitions and word-related information, but not other people's. This information will be stored in the db, can also be updated and deleted by the user.
